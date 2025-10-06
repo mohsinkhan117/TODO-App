@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "313121716247",
+    "project_id": "todo-app-from-scratch",
+    "storage_bucket": "todo-app-from-scratch.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:313121716247:android:48e2a042be743f49ba4452",
+        "android_client_info": {
+          "package_name": "com.example.todo_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC_7Y5OzsUJ78V9axZ_b1T3Imdf1gafS8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
