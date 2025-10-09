@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:todo_app/ui/todo_project/todo_project.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:todo_app/ui/todo_project/todo_view_model.dart';
+import 'package:todo_app/ui/todo_project_tasks.dart/task_view.dart';
+import 'package:todo_app/ui/todo_project_tasks.dart/task_view_model.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -11,9 +13,8 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<TodoViewModel>(
-          create: (context) => TodoViewModel(),
-        ),
+        ChangeNotifierProvider(create: (_) => ProjectViewModel()),
+        ChangeNotifierProvider(create: (_) => TaskViewModel()),
       ],
       child: MyApp(),
     ),
