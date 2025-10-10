@@ -1,13 +1,14 @@
+//lib\core\models\todo_tasks_model.dart
 class Task {
-  final int? id; // Task ID (Primary Key)
-  final int projectId; // Foreign Key linking to the Project table
+  final int? id;
+  final int? projectId;
   final String title;
   final bool isDone;
   final DateTime plannedDate;
   final DateTime? extendedDate;
   Task({
     this.id,
-    required this.projectId,
+    this.projectId,
     required this.title,
     required this.isDone,
     required this.plannedDate,
@@ -19,7 +20,9 @@ class Task {
       'id': id,
       'projectId': projectId,
       'title': title,
+
       'isDone': isDone ? 1 : 0,
+
       'plannedDate': plannedDate.toIso8601String(),
       'extendedDate': extendedDate?.toIso8601String(),
     };
@@ -27,10 +30,13 @@ class Task {
 
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
-      projectId: map['projectId'] as int,
+      id: map['id'] as int?,
+      projectId: map['projectId'] as int?,
       title: map['title'] as String,
-      isDone: map['isDone'] as bool,
-      plannedDate: map['plannedDate'] as DateTime,
+
+      isDone: (map['isDone'] as int) == 1,
+
+      plannedDate: DateTime.parse(map['plannedDate'] as String),
       extendedDate: map['extendedDate'] != null
           ? DateTime.parse(map['extendedDate'] as String)
           : null,
