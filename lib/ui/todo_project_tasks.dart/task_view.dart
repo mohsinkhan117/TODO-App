@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:todo_app/core/models/todo_project_model.dart';
 import 'package:todo_app/core/theme/app_gradients.dart';
 import 'package:todo_app/ui/todo_project_tasks.dart/task_view_model.dart';
 
 class ToDos extends StatelessWidget {
-  final Map<String, dynamic> project;
+  final Project project;
   final int index;
 
   const ToDos({super.key, required this.project, required this.index});
@@ -15,9 +16,55 @@ class ToDos extends StatelessWidget {
 
     return Scaffold(
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {},
+        onPressed: () {
+          showModalBottomSheet(
+            useSafeArea: true,
+            isScrollControlled: true,
+            enableDrag: true,
+            showDragHandle: true,
+            context: context,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
+            ),
+            builder: (context) {
+              final double keyboardHeight = MediaQuery.of(
+                context,
+              ).viewInsets.bottom;
+              return Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20.0,
+                  20.0,
+                  20.0,
+                  20.0 + keyboardHeight,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Add New ToDo',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(decoration: InputDecoration(labelText: 'Title')),
+                    SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      child: Text('Save'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
         label: Text('ADD TODO'),
       ),
+
       body: CustomScrollView(
         slivers: [
           //================ AppBar ================
@@ -29,7 +76,7 @@ class ToDos extends StatelessWidget {
               icon: Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
             ),
             title: Text(
-              project['title'],
+              project.title,
               style: const TextStyle(color: Colors.white),
               maxLines: 4,
               overflow: TextOverflow.ellipsis,
@@ -53,7 +100,7 @@ class ToDos extends StatelessWidget {
                     bottom: 30.0,
                   ),
                   child: Text(
-                    project['description'] ?? "No description",
+                    project.description ?? "No description",
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 16,

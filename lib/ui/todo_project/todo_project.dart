@@ -1,9 +1,10 @@
-//lib\ui\todo_project\todo_project.dart
+// lib\ui\todo_project\todo_project.dart
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/flutter_percent_indicator.dart';
 import 'package:provider/provider.dart';
+import 'package:todo_app/core/models/todo_project_model.dart';
 import 'package:todo_app/core/theme/app_gradients.dart';
-import 'package:todo_app/ui/todo_project/create_todo_project/create_todo_project.dart';
+ import 'package:todo_app/ui/todo_project/create_todo_project/create_todo_project.dart';
 import 'package:todo_app/ui/todo_project/todo_view_model.dart';
 import 'package:todo_app/ui/todo_project_tasks.dart/task_view.dart';
 
@@ -12,8 +13,10 @@ class TodoProject extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Ensure vm.projects is now List<Project>
     final vm = Provider.of<ProjectViewModel>(context);
     WidgetsBinding.instance.addPostFrameCallback((_) => vm.loadProjects());
+    
     return Scaffold(
       appBar: AppBar(
         actions: [
@@ -21,23 +24,23 @@ class TodoProject extends StatelessWidget {
             onPressed: () {
               vm.deleteDataBase();
             },
-            icon: Icon(Icons.delete),
+            icon: const Icon(Icons.delete),
           ),
         ],
         title: Row(
           children: [
             Image.asset('assets/app_logo.png', width: 40.0, height: 40.0),
-            Text('  ToDos', style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('  ToDos', style: TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
       ),
       body: Column(
         children: [
           vm.projects.isEmpty
-              ? Text('No Projects Created, Create One')
+              ? const Text('No Projects Created, Create One')
               : Expanded(
                   child: ListView.separated(
-                    physics: AlwaysScrollableScrollPhysics(),
+                    physics: const AlwaysScrollableScrollPhysics(),
                     shrinkWrap: true,
                     itemBuilder: (context, index) {
                       final project = vm.projects[index];
@@ -45,17 +48,18 @@ class TodoProject extends StatelessWidget {
                       return ToDoProjectContainer(
                         index: index,
                         project: project,
-                        onDelete: () => vm.deleteProject(project),
+                        // Pass the Project object to the delete function
+                        onDelete: () => vm.deleteProject(project), 
                       );
                     },
-                    separatorBuilder: (context, index) => SizedBox(height: 10),
+                    separatorBuilder: (context, index) => const SizedBox(height: 10),
                     itemCount: vm.projects.length,
                   ),
                 ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        label: Text('CREATE PROJECT'),
+        label: const Text('CREATE PROJECT'),
         onPressed: () {
           Navigator.push(
             context,
@@ -67,11 +71,14 @@ class TodoProject extends StatelessWidget {
   }
 }
 
+ 
 class ToDoProjectContainer extends StatelessWidget {
-  final Map<String, dynamic> project;
+  // CHANGED: Use the Project model here
+  final Project project; 
   final VoidCallback onDelete;
   final int index;
-  ToDoProjectContainer({
+  
+  const ToDoProjectContainer({
     super.key,
     required this.project,
     required this.onDelete,
@@ -80,12 +87,24 @@ class ToDoProjectContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Calculate progress safely
+    final double progress = (project.totalTasks > 0) 
+        ? project.completedTasks / project.totalTasks 
+        : 0.0;
+        
+    // Format the date for display
+    final String plannedDateStr = 
+        '${project.plannedDate.day}/${project.plannedDate.month}/${project.plannedDate.year}';
+
     return Center(
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => ToDos(project: project, index: index),
+            // NOTE: You'll need to update the `ToDos` widget to accept a Project object 
+            // instead of Map<String, dynamic> if you continue with model-based data.
+            // For now, passing the Project object directly:
+            builder: (context) => ToDos(project: project, index: index), 
           ),
         ),
         child: Container(
@@ -107,8 +126,9 @@ class ToDoProjectContainer extends StatelessWidget {
                 child: Text(
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  project['title'] ?? 'UnTitled',
-                  style: TextStyle(
+                  // CHANGED: Access model property
+                  project.title, 
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
@@ -121,23 +141,22 @@ class ToDoProjectContainer extends StatelessWidget {
                 right: 20,
                 child: Text(
                   maxLines: 4,
-                  project['description'] ?? 'undescribed',
+                  // CHANGED: Access model property
+                  project.description ?? 'undescribed', 
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(color: Colors.white),
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
               //============ Delete functionality===========
               Positioned(
                 top: 10,
-
                 right: 10,
                 child: CircleAvatar(
                   backgroundColor: Colors.white30,
                   radius: 20,
                   child: IconButton(
                     onPressed: onDelete,
-
-                    icon: Icon(
+                    icon: const Icon(
                       Icons.delete_outline_rounded,
                       color: Colors.white,
                     ),
@@ -149,8 +168,9 @@ class ToDoProjectContainer extends StatelessWidget {
                 bottom: 37,
                 left: 20,
                 child: Text(
-                  ' ${project['completedTasks'] ?? 0}/${project['totalTasks'] ?? 0}',
-                  style: TextStyle(
+                  // CHANGED: Access model properties
+                  ' ${project.completedTasks}/${project.totalTasks}', 
+                  style: const TextStyle(
                     fontSize: 24,
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -163,12 +183,12 @@ class ToDoProjectContainer extends StatelessWidget {
                 left: 10,
                 right: 20,
                 child: LinearPercentIndicator(
-                  barRadius: const Radius.circular(10), // for rounded corners
+                  barRadius: const Radius.circular(10),
                   linearStrokeCap: LinearStrokeCap.roundAll,
                   animation: true,
                   progressColor: Colors.white,
-                  percent:
-                      project['completedTasks'] / project['totalTasks'] ?? 0.0,
+                  // CHANGED: Use calculated progress
+                  percent: progress, 
                   backgroundColor: Colors.blue[100],
                   width: MediaQuery.of(context).devicePixelRatio * 50.0,
                   lineHeight: 15.0,
@@ -179,8 +199,9 @@ class ToDoProjectContainer extends StatelessWidget {
                 bottom: 10,
                 right: 15,
                 child: Text(
-                  'Planned for: ${project['plannedDate']}',
-                  style: TextStyle(color: Colors.white),
+                  // CHANGED: Use formatted date string
+                  'Planned for: $plannedDateStr', 
+                  style: const TextStyle(color: Colors.white),
                 ),
               ),
             ],
