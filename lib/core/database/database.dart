@@ -3,11 +3,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
-import 'package:todo_app/core/models/todo_project_model.dart';
-import 'package:todo_app/core/models/todo_tasks_model.dart';
-
-// --- Database Constants for Clarity and Safety ---
-// Define table and column names as static constants to prevent typos
+import 'package:todo_app/core/models/project_model.dart';
+import 'package:todo_app/core/models/tasks_model.dart';
+ 
 class DatabaseConstants {
   static const String dbName = 'todo_projects.db';
   static const int dbVersion = 1;
@@ -48,8 +46,7 @@ class TodoDatabase {
       path,
       version: DatabaseConstants.dbVersion,
       onCreate: _createDB,
-      // Important for Foreign Key integrity: set foreign_keys = ON immediately after opening
-      onConfigure: (db) async {
+       onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
     );

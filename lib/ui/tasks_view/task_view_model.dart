@@ -1,11 +1,12 @@
 //lib\ui\todo_project_tasks.dart\task_view_model.dart
 import 'package:flutter/material.dart';
-import 'package:todo_app/core/models/todo_project_model.dart';
-import 'package:todo_app/core/models/todo_tasks_model.dart';
-import 'package:todo_app/core/todo_database/todo_project_database.dart';
+import 'package:todo_app/core/models/project_model.dart';
+import 'package:todo_app/core/models/tasks_model.dart';
+import 'package:todo_app/core/database/database.dart';
 
 class TaskViewModel extends ChangeNotifier {
   List<Task> todos = [];
+  Project? _currentProject;
   TextEditingController todoController = TextEditingController();
   TextEditingController plannedTime = TextEditingController();
   int _remainingDays = 0;
@@ -13,14 +14,33 @@ class TaskViewModel extends ChangeNotifier {
   bool isLoading = false;
   bool _isDone = false;
   bool get isDone => _isDone;
-  bool isLoaded = false;
+  bool hasLoaded = false;
+  int? _lastLoadedProjectId;
+
+  Future<void> setCurrentProject(Project project) async {
+    if (project.id != null && project.id == _lastLoadedProjectId && hasLoaded) {
+      _currentProject = project;
+      debugPrint("Skipping load: Project ${project.id} already loaded.");
+      return;
+    }
+
+    _lastLoadedProjectId = project.id;
+    hasLoaded = false;
+    todos.clear();
+
+    await loadTodos(project);
+  }
+
   Future<void> loadTodos(Project project) async {
+    isLoading = true;
+    todos.clear();
+    notifyListeners();
     try {
       todos = await TodoDatabase.getTasksForProject(project.id!);
-      isLoaded = true;
+      hasLoaded = true;
       notifyListeners();
     } catch (e) {
-      isLoaded = false;
+      hasLoaded = false;
       debugPrint("Error loading tasks: $e");
     } finally {
       isLoading = false;
@@ -29,14 +49,13 @@ class TaskViewModel extends ChangeNotifier {
   }
 
   Future<void> creatTask(Project parentProject) async {
-    debugPrint(
-      "📌 Creating task for project: ${parentProject.title}, id: ${parentProject.id}",
-    );
+    debugPrint("📌 Creating task for project  id: ${parentProject.id}");
 
     if (todoController.text.isEmpty || parentProject.id == null) {
       debugPrint("⚠️ Skipping task creation — invalid project or empty title");
       return;
     }
+    //will make it editable once database structure is cleared
     final DateTime finalPlannedDate = DateTime.now();
 
     final newTask = Task(
@@ -46,6 +65,7 @@ class TaskViewModel extends ChangeNotifier {
       plannedDate: finalPlannedDate,
     );
     try {
+      // await TodoDatabase.insertTask(newTask);
       final newId = await TodoDatabase.insertTask(newTask);
       final taskWithId = newTask.copyWith(id: newId);
       todos.add(taskWithId);
@@ -58,19 +78,28 @@ class TaskViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint("Error creating task: $e");
     }
-
-    notifyListeners();
   }
 
   Future<void> _updateProjectStats(Project project) async {
     await TodoDatabase.updateProject(project);
   }
 
-  void toggleTaskStatus(Task task, bool newValue) {
+  Future<void> toggleTaskStatus(Task task, bool newValue) async {
     final index = todos.indexOf(task);
-    if (index != -1) {
-      todos[index] = todos[index].copyWith(isDone: newValue);
+    final updatedTask = task.copyWith(isDone: newValue);
+    todos[index] = updatedTask;
+    final int toggleCompleted = newValue ? 1 : -1;
+    final completedTasks = _currentProject!.completedTasks + toggleCompleted;
+    final updatedProject = _currentProject!.copyWith(
+      completedTasks: completedTasks,
+    );
+    _currentProject = updatedProject;
+    try {
+      await TodoDatabase.updateTask(updatedTask);
+      await TodoDatabase.updateProject(updatedProject);
       notifyListeners();
+    } catch (e) {
+      debugPrint("❌ Error updating task or project stats: $e");
     }
   }
 

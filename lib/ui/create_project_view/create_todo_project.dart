@@ -3,7 +3,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:todo_app/core/theme/app_gradients.dart';
-import 'package:todo_app/ui/todo_project/todo_view_model.dart';
+import 'package:todo_app/ui/project_view/project_view_model.dart';
 
 class CreateTodoProject extends StatelessWidget {
   const CreateTodoProject({super.key});

@@ -1,14 +1,14 @@
 //lib\core\models\todo_tasks_model.dart
 class Task {
   final int? id;
-  final int? projectId;
+  final int projectId;
   final String title;
   final bool isDone;
   final DateTime plannedDate;
   final DateTime? extendedDate;
   Task({
     this.id,
-    this.projectId,
+    required this.projectId,
     required this.title,
     required this.isDone,
     required this.plannedDate,
@@ -31,7 +31,7 @@ class Task {
   factory Task.fromMap(Map<String, dynamic> map) {
     return Task(
       id: map['id'] as int?,
-      projectId: map['projectId'] as int?,
+      projectId: map['projectId'] as int,
       title: map['title'] as String,
 
       isDone: (map['isDone'] as int) == 1,

@@ -1,10 +1,10 @@
 // lib/ui/todo_project_tasks.dart/task_view.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:todo_app/core/models/todo_project_model.dart';
-import 'package:todo_app/core/models/todo_tasks_model.dart';
+import 'package:todo_app/core/models/project_model.dart';
+import 'package:todo_app/core/models/tasks_model.dart';
 import 'package:todo_app/core/theme/app_gradients.dart';
-import 'package:todo_app/ui/todo_project_tasks.dart/task_view_model.dart';
+import 'package:todo_app/ui/tasks_view/task_view_model.dart';
 
 class ToDos extends StatelessWidget {
   final Project project;
@@ -17,9 +17,9 @@ class ToDos extends StatelessWidget {
     final vm = Provider.of<TaskViewModel>(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!vm.isLoaded) {
-        vm.loadTodos(project);
-      }
+      // if (!vm.hasLoaded) {
+      vm.setCurrentProject(project);
+      // }
     });
 
     return Scaffold(
@@ -201,38 +201,45 @@ class ToDoContainer extends StatelessWidget {
     final vm = Provider.of<TaskViewModel>(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-        height: 75,
-        decoration: BoxDecoration(
-          color: task.isDone
-              ? Colors.red.withValues(alpha: 0.2)
-              : Colors.green.withValues(alpha: 0.2),
-          borderRadius: BorderRadius.circular(25.0),
-        ),
-        child: Row(
-          children: [
-            Checkbox(
-              value: task.isDone,
-              onChanged: (value) {
-                if (value != null) {
-                  vm.toggleTaskStatus(task, value);
-                }
-              },
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                task.title,
-                style: TextStyle(
-                  fontSize: 16,
-                  decoration: task.isDone
-                      ? TextDecoration.lineThrough
-                      : TextDecoration.none,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(30.0),
+        onLongPress: () {},
+        onTap: () {
+          vm.toggleTaskStatus(task, !task.isDone);
+        },
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          height: 75,
+          decoration: BoxDecoration(
+            color: task.isDone
+                ? Colors.green.withValues(alpha: 0.2)
+                : Colors.red.withValues(alpha: 0.2),
+            borderRadius: BorderRadius.circular(25.0),
+          ),
+          child: Row(
+            children: [
+              Checkbox(
+                value: task.isDone,
+                onChanged: (value) {
+                  if (value != null) {
+                    vm.toggleTaskStatus(task, value);
+                  }
+                },
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  task.title,
+                  style: TextStyle(
+                    fontSize: 16,
+                    decoration: task.isDone
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
