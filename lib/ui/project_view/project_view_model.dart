@@ -17,15 +17,26 @@ class ProjectViewModel extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool hasLoaded = false;
   //================= Load Projects ==================
+  // In ProjectViewModel - Update loadProjects method
   Future<void> loadProjects() async {
-    if (hasLoaded = false) {
+    if (!hasLoaded) {
       _isLoading = true;
       notifyListeners();
-
       _projects.clear();
     }
+
     try {
       _projects = await TodoDatabase.getProjects();
+
+      // for (final project in _projects) {
+      //   if (project.id != null) {
+      //     await TodoDatabase.recalculateProjectStats(project.id!);
+      //   }
+      // }
+
+      // Reload projects with updated stats
+      _projects = await TodoDatabase.getProjects();
+
       hasLoaded = true;
       _isLoading = false;
       notifyListeners();
@@ -77,6 +88,7 @@ class ProjectViewModel extends ChangeNotifier {
     }
   }
 
+  // In ProjectViewModel - FIX the deleteProject method
   Future<void> deleteProject(Project project) async {
     if (project.id != null) {
       _isLoading = true;
@@ -85,8 +97,10 @@ class ProjectViewModel extends ChangeNotifier {
       final id = project.id!;
 
       try {
-        await TodoDatabase.deleteDatabaseFile();
+        // CORRECT: Delete only this project, not the entire database
+        await TodoDatabase.deleteProject(id);
 
+        // Remove from local state
         _projects.removeWhere((p) => p.id == id);
 
         debugPrint('🗑️ Project deleted: $id');

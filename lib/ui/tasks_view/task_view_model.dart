@@ -48,30 +48,52 @@ class TaskViewModel extends ChangeNotifier {
     }
   }
 
+  Future<void> _updateProjectStats(Project project) async {
+    await TodoDatabase.updateProject(_currentProject!);
+  }
+
+  Future<void> _syncProjectStats() async {
+    if (_currentProject == null) return;
+
+    // Always recalculate from actual tasks to ensure consistency
+    final newTotalTasks = todos.length;
+    final newCompletedTasks = todos.where((task) => task.isDone).length;
+
+    final updatedProject = _currentProject!.copyWith(
+      totalTasks: newTotalTasks,
+      completedTasks: newCompletedTasks,
+    );
+
+    _currentProject = updatedProject;
+    await _updateProjectStats(updatedProject);
+  }
+
   Future<void> creatTask(Project parentProject) async {
-    debugPrint("📌 Creating task for project  id: ${parentProject.id}");
+    debugPrint("📌 Creating task for project id: ${parentProject.id}");
 
     if (todoController.text.isEmpty || parentProject.id == null) {
       debugPrint("⚠️ Skipping task creation — invalid project or empty title");
       return;
     }
-    //will make it editable once database structure is cleared
+
+    final projectToUpdate = _currentProject ?? parentProject;
+
     final DateTime finalPlannedDate = DateTime.now();
 
     final newTask = Task(
-      projectId: parentProject.id!,
+      projectId: projectToUpdate.id!,
       title: todoController.text,
       isDone: false,
       plannedDate: finalPlannedDate,
     );
+
     try {
-      // await TodoDatabase.insertTask(newTask);
       final newId = await TodoDatabase.insertTask(newTask);
       final taskWithId = newTask.copyWith(id: newId);
       todos.add(taskWithId);
-      await _updateProjectStats(
-        parentProject.copyWith(totalTasks: parentProject.totalTasks + 1),
-      );
+
+      // Use the sync method instead of manual calculation
+      await _syncProjectStats();
 
       todoController.clear();
       notifyListeners();
@@ -80,31 +102,37 @@ class TaskViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> _updateProjectStats(Project project) async {
-    await TodoDatabase.updateProject(project);
-  }
-
+  // Update toggleTaskStatus method
   Future<void> toggleTaskStatus(Task task, bool newValue) async {
     final index = todos.indexOf(task);
     final updatedTask = task.copyWith(isDone: newValue);
     todos[index] = updatedTask;
-    final int toggleCompleted = newValue ? 1 : -1;
-    final completedTasks = _currentProject!.completedTasks + toggleCompleted;
-    final updatedProject = _currentProject!.copyWith(
-      completedTasks: completedTasks,
-    );
-    _currentProject = updatedProject;
+
     try {
       await TodoDatabase.updateTask(updatedTask);
-      await TodoDatabase.updateProject(updatedProject);
+      // Use sync method instead of manual calculation
+      await _syncProjectStats();
       notifyListeners();
     } catch (e) {
       debugPrint("❌ Error updating task or project stats: $e");
     }
   }
 
-  Future<void> deleteTodo(int index) async {
-    await todos.removeAt(index);
+  // Update deleteTask method
+  void deleteTask(Task task) {
+    final wasDone = task.isDone;
+    todos.remove(task);
+    TodoDatabase.deleteTask(task.id!);
+
+    // Use sync method instead of manual calculation
+    _syncProjectStats();
+
     notifyListeners();
   }
+
+  // void editTask(Task task, String newTitle) {
+  //   task.title = newTitle;
+  //   notifyListeners();
+  //   // TODO: update in database
+  // }
 }

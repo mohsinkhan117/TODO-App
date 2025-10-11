@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:todo_app/core/models/project_model.dart';
 import 'package:todo_app/core/models/tasks_model.dart';
- 
+
 class DatabaseConstants {
   static const String dbName = 'todo_projects.db';
   static const int dbVersion = 1;
@@ -46,7 +46,7 @@ class TodoDatabase {
       path,
       version: DatabaseConstants.dbVersion,
       onCreate: _createDB,
-       onConfigure: (db) async {
+      onConfigure: (db) async {
         await db.execute('PRAGMA foreign_keys = ON');
       },
     );
@@ -177,14 +177,111 @@ class TodoDatabase {
     final databasesPath = await getDatabasesPath();
     final path = join(databasesPath, DatabaseConstants.dbName);
 
-    if (_database != null) {
-      await _database!.close();
-      _database = null;
-    }
+    try {
+      // Close database connection if open
+      if (_database != null) {
+        await _database!.close();
+        _database = null;
+        debugPrint('🔒 Database connection closed');
+      }
 
-    await deleteDatabase(path);
-    debugPrint(
-      '🗑️ Database "${DatabaseConstants.dbName}" deleted successfully',
-    );
+      // Delete the main database file
+      await deleteDatabase(path);
+      debugPrint(
+        '🗑️ Database "${DatabaseConstants.dbName}" deleted successfully',
+      );
+    } catch (e) {
+      debugPrint('❌ Error deleting database: $e');
+      rethrow;
+    }
+  }
+
+  // Delete all data from all tables (without deleting the database file)
+  static Future<void> clearAllData() async {
+    final db = await database;
+
+    try {
+      await db.transaction((txn) async {
+        // Delete all tasks first (due to foreign key constraints)
+        await txn.delete(DatabaseConstants.taskTable);
+        debugPrint('🗑️ All tasks deleted');
+
+        // Delete all projects
+        await txn.delete(DatabaseConstants.projectTable);
+        debugPrint('🗑️ All projects deleted');
+      });
+
+      debugPrint('✅ All data cleared successfully');
+    } catch (e) {
+      debugPrint('❌ Error clearing data: $e');
+      rethrow;
+    }
+  }
+
+  // Get database statistics before deletion
+  static Future<Map<String, int>> getDatabaseStats() async {
+    final db = await database;
+
+    try {
+      final projectCount =
+          Sqflite.firstIntValue(
+            await db.rawQuery(
+              'SELECT COUNT(*) FROM ${DatabaseConstants.projectTable}',
+            ),
+          ) ??
+          0;
+
+      final taskCount =
+          Sqflite.firstIntValue(
+            await db.rawQuery(
+              'SELECT COUNT(*) FROM ${DatabaseConstants.taskTable}',
+            ),
+          ) ??
+          0;
+
+      return {'projects': projectCount, 'tasks': taskCount};
+    } catch (e) {
+      debugPrint('❌ Error getting database stats: $e');
+      return {'projects': 0, 'tasks': 0};
+    }
+  }
+
+  // Add this method to your TodoDatabase class
+  static Future<void> recalculateProjectStats(int projectId) async {
+    final db = await database;
+
+    try {
+      // Get actual task counts from database
+      final taskStats = await db.rawQuery(
+        '''
+      SELECT 
+        COUNT(*) as totalTasks,
+        SUM(CASE WHEN ${DatabaseConstants.taskIsDone} = 1 THEN 1 ELSE 0 END) as completedTasks
+      FROM ${DatabaseConstants.taskTable} 
+      WHERE ${DatabaseConstants.taskProjectId} = ?
+    ''',
+        [projectId],
+      );
+
+      final totalTasks = taskStats.first['totalTasks'] as int? ?? 0;
+      final completedTasks = taskStats.first['completedTasks'] as int? ?? 0;
+
+      // Update project with accurate counts
+      await db.update(
+        DatabaseConstants.projectTable,
+        {
+          DatabaseConstants.projectTotalTasks: totalTasks,
+          DatabaseConstants.projectCompletedTasks: completedTasks,
+        },
+        where: '${DatabaseConstants.projectId} = ?',
+        whereArgs: [projectId],
+      );
+
+      debugPrint(
+        '📊 Updated project $projectId stats: $completedTasks/$totalTasks',
+      );
+    } catch (e) {
+      debugPrint('❌ Error recalculating project stats: $e');
+    }
   }
 }

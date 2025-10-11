@@ -17,9 +17,7 @@ class ToDos extends StatelessWidget {
     final vm = Provider.of<TaskViewModel>(context);
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // if (!vm.hasLoaded) {
       vm.setCurrentProject(project);
-      // }
     });
 
     return Scaffold(
@@ -192,54 +190,150 @@ class ToDos extends StatelessWidget {
 //
 // ================= ToDo Container =================
 //
-class ToDoContainer extends StatelessWidget {
+// lib/ui/todo_project_tasks.dart/task_view.dart (Updated)
+
+// ... existing imports ...
+
+//
+// ================= ToDo Container (Stateful) =================
+//
+class ToDoContainer extends StatefulWidget {
   final Task task;
   const ToDoContainer({super.key, required this.task});
 
   @override
+  State<ToDoContainer> createState() => _ToDoContainerState();
+}
+
+class _ToDoContainerState extends State<ToDoContainer> {
+  bool _showOptions = false;
+
+  @override
   Widget build(BuildContext context) {
     final vm = Provider.of<TaskViewModel>(context);
+
+    final Color containerColor = widget.task.isDone
+        ? Colors.green.withOpacity(0.2)
+        : Colors.red.withOpacity(0.2);
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 6.0),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(30.0),
-        onLongPress: () {},
+      child: GestureDetector(
+        onLongPress: () {
+          setState(() {
+            _showOptions = true;
+          });
+        },
         onTap: () {
-          vm.toggleTaskStatus(task, !task.isDone);
+          if (_showOptions) {
+            setState(() {
+              _showOptions = false;
+            });
+          } else {
+            vm.toggleTaskStatus(widget.task, !widget.task.isDone);
+          }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          clipBehavior: Clip.antiAlias,
           height: 75,
           decoration: BoxDecoration(
-            color: task.isDone
-                ? Colors.green.withValues(alpha: 0.2)
-                : Colors.red.withValues(alpha: 0.2),
+            color: containerColor,
             borderRadius: BorderRadius.circular(25.0),
           ),
-          child: Row(
+          child: Stack(
             children: [
-              Checkbox(
-                value: task.isDone,
-                onChanged: (value) {
-                  if (value != null) {
-                    vm.toggleTaskStatus(task, value);
-                  }
-                },
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  task.title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    decoration: task.isDone
-                        ? TextDecoration.lineThrough
-                        : TextDecoration.none,
-                  ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: widget.task.isDone,
+                      onChanged: (value) {
+                        if (value != null) {
+                          vm.toggleTaskStatus(widget.task, value);
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        widget.task.title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          decoration: widget.task.isDone
+                              ? TextDecoration.lineThrough
+                              : TextDecoration.none,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+
+              if (_showOptions)
+                Positioned.fill(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: LongPressMenu(
+                        onDelete: () {
+                          vm.deleteTask(widget.task);
+                          setState(() => _showOptions = false);
+                        },
+                        onEdit: () {
+                          setState(() => _showOptions = false);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class LongPressMenu extends StatelessWidget {
+  final VoidCallback onDelete;
+  final VoidCallback onEdit;
+
+  const LongPressMenu({
+    super.key,
+    required this.onDelete,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(30.0),
+        border: Border.all(width: 1.0, color: Colors.grey.shade300),
+        boxShadow: const [
+          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(0, 2)),
+        ],
+      ),
+
+      child: IntrinsicHeight(
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Delete Button
+            IconButton(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete, color: Colors.red),
+            ),
+            const VerticalDivider(width: 1, color: Colors.grey),
+            // Edit Button
+            IconButton(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit, color: Colors.blue),
+            ),
+          ],
         ),
       ),
     );

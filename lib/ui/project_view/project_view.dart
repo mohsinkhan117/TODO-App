@@ -1,6 +1,6 @@
 // lib\ui\todo_project\todo_project.dart
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart'; // 👈 Import for CupertinoActivityIndicator
+import 'package:flutter/cupertino.dart';
 import 'package:percent_indicator/flutter_percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:todo_app/core/models/project_model.dart';
@@ -21,63 +21,66 @@ class TodoProject extends StatelessWidget {
       (_) => vmNoListen.loadProjects(),
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        actions: [
-          IconButton(
-            onPressed: () {
-              vm.deleteDataBase();
-            },
-            icon: const Icon(Icons.delete),
-          ),
-        ],
-        title: Text(
-          '  P R O J E C T S',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (vm.isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: CupertinoActivityIndicator(radius: 15.0),
-              ),
-            )
-          else if (vm.projects.isEmpty)
-            const Center(child: Text('No Projects Created, Create One'))
-          else
-            Expanded(
-              child: ListView.separated(
-                physics: const AlwaysScrollableScrollPhysics(),
-                shrinkWrap: true,
-                itemBuilder: (context, index) {
-                  final project = vm.projects[index];
-
-                  return ToDoProjectContainer(
-                    index: index,
-                    project: project,
-
-                    onDelete: () => vm.deleteProject(project),
-                  );
-                },
-                separatorBuilder: (context, index) =>
-                    const SizedBox(height: 10),
-                itemCount: vm.projects.length,
-              ),
+    return RefreshIndicator(
+      onRefresh: () => vm.loadProjects(),
+      child: Scaffold(
+        appBar: AppBar(
+          actions: [
+            IconButton(
+              onPressed: () {
+                vm.deleteDataBase();
+              },
+              icon: const Icon(Icons.delete),
             ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        label: const Text('CREATE PROJECT'),
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => CreateTodoProject()),
-          );
-        },
+          ],
+          title: Text(
+            '  P R O J E C T S',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        body: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (vm.isLoading)
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(20.0),
+                  child: CupertinoActivityIndicator(radius: 15.0),
+                ),
+              )
+            else if (vm.projects.isEmpty)
+              const Center(child: Text('No Projects Created, Create One'))
+            else
+              Expanded(
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  shrinkWrap: true,
+                  itemBuilder: (context, index) {
+                    final project = vm.projects[index];
+
+                    return ToDoProjectContainer(
+                      index: index,
+                      project: project,
+
+                      onDelete: () => vm.deleteProject(project),
+                    );
+                  },
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 10),
+                  itemCount: vm.projects.length,
+                ),
+              ),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          label: const Text('CREATE PROJECT'),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => CreateTodoProject()),
+            );
+          },
+        ),
       ),
     );
   }
@@ -97,8 +100,9 @@ class ToDoProjectContainer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final vm = Provider.of<ProjectViewModel>(context);
     final double progress = (project.totalTasks > 0)
-        ? project.completedTasks / project.totalTasks
+        ? (project.completedTasks / project.totalTasks).clamp(0.0, 1.0)
         : 0.0;
 
     final String plannedDateStr =
@@ -169,7 +173,7 @@ class ToDoProjectContainer extends StatelessWidget {
                               onPressed: () async {
                                 dialogueBox(
                                   context: context,
-                                  onDelete: onDelete,
+                                  onDelete: () => vm.deleteProject(project),
                                   content:
                                       'You are deleting "${project.title.toUpperCase()}"\n You will be unable to restore it',
                                 );
@@ -189,7 +193,7 @@ class ToDoProjectContainer extends StatelessWidget {
                 left: 20,
                 child: Text(
                   // CHANGED: Access model properties
-                  ' ${project.completedTasks}/${project.totalTasks + 1}',
+                  ' ${project.completedTasks}/${project.totalTasks}',
                   style: const TextStyle(
                     fontSize: 24,
                     color: Colors.white,
@@ -209,7 +213,7 @@ class ToDoProjectContainer extends StatelessWidget {
                   animationDuration: 800,
                   progressColor: Colors.white,
 
-                  percent: project.completedTasks / (project.totalTasks + 1),
+                  percent: progress,
                   backgroundColor: Colors.blue[100],
                   width: MediaQuery.of(context).devicePixelRatio * 50.0,
                   lineHeight: 15.0,
