@@ -24,84 +24,94 @@ class TodoProject extends StatelessWidget {
     );
 
     return Scaffold(
-      body: RefreshIndicator(
-        onRefresh: () => vm.loadProjects(),
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              title: Text(
-                'P R O J E C T S',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage("assets/scaffold_background.png"),
+            fit: BoxFit.cover, // This will cover the entire screen
+          ),
+        ),
+        child: RefreshIndicator(
+          onRefresh: () => vm.loadProjects(),
+          child: CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                title: Text(
+                  'P R O J E C T S',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 2,
+                  ),
                 ),
-              ),
-              pinned: true,
-              expandedHeight: 180,
-              backgroundColor: Colors.transparent,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(25),
-                  bottomRight: Radius.circular(25),
-                ),
-              ),
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: AppGradients.gradients.values.elementAt(7),
-                  borderRadius: const BorderRadius.only(
+                pinned: true,
+                expandedHeight: 180,
+                backgroundColor:
+                    Colors.transparent, // Keep transparent to see background
+                shape: const RoundedRectangleBorder(
+                  borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(25),
                     bottomRight: Radius.circular(25),
                   ),
                 ),
-                child: const Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 16.0),
-                    // child:
+                flexibleSpace: Container(
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.gradients.values.elementAt(7),
+                    borderRadius: const BorderRadius.only(
+                      bottomLeft: Radius.circular(25),
+                      bottomRight: Radius.circular(25),
+                    ),
+                  ),
+                  child: const Align(
+                    alignment: Alignment.bottomCenter,
+                    child: Padding(padding: EdgeInsets.only(bottom: 16.0)),
                   ),
                 ),
+                actions: [
+                  IconButton(
+                    onPressed: () => vm.deleteDataBase(),
+                    icon: const Icon(Icons.delete, color: Colors.white),
+                  ),
+                ],
               ),
-              actions: [
-                IconButton(
-                  onPressed: () => vm.deleteDataBase(),
-                  icon: const Icon(Icons.delete, color: Colors.white),
-                ),
-              ],
-            ),
 
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: vm.isLoading
-                    ? const Center(
-                        child: CupertinoActivityIndicator(radius: 15),
-                      )
-                    : vm.projects.isEmpty
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text('No Projects Created, Create One'),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(12.0),
+                  child: vm.isLoading
+                      ? const Center(
+                          child: CupertinoActivityIndicator(radius: 15),
+                        )
+                      : vm.projects.isEmpty
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(16.0),
+                            child: Text(
+                              'No Projects Created, Create One',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemBuilder: (context, index) {
+                            final project = vm.projects[index];
+                            return ToDoProjectContainer(
+                              index: index,
+                              project: project,
+                              onDelete: () => vm.deleteProject(project),
+                            );
+                          },
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: 10),
+                          itemCount: vm.projects.length,
                         ),
-                      )
-                    : ListView.separated(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) {
-                          final project = vm.projects[index];
-                          return ToDoProjectContainer(
-                            index: index,
-                            project: project,
-                            onDelete: () => vm.deleteProject(project),
-                          );
-                        },
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemCount: vm.projects.length,
-                      ),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -149,9 +159,6 @@ class ToDoProjectContainer extends StatelessWidget {
         ),
         child: Container(
           decoration: BoxDecoration(
-            // gradient: AppGradients.gradients.values.elementAt(
-            //   index % AppGradients.gradients.length,
-            // ),
             borderRadius: BorderRadius.circular(30.0),
             color: Colors.white.withValues(alpha: 0.3),
             border: Border.all(color: Colors.white30),
