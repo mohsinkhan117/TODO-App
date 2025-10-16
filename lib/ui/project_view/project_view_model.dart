@@ -11,13 +11,121 @@ class ProjectViewModel extends ChangeNotifier {
 
   DateTime? selectedPlannedDate;
 
+  // Validation states
+  String? _titleError;
+  String? _dateError;
+  String? _descriptionError;
+
+  String? get titleError => _titleError;
+  String? get dateError => _dateError;
+  String? get descriptionError => _descriptionError;
+
   List<Project> get projects => _projects;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
   bool hasLoaded = false;
+
+  //================= VALIDATION METHODS ==================
+
+  String? validateTitle(String? value) {
+    if (value == null || value.isEmpty) {
+      _titleError = 'Project title is required';
+      notifyListeners();
+      return _titleError;
+    }
+
+    if (value.length < 3) {
+      _titleError = 'Title must be at least 3 characters long';
+      notifyListeners();
+      return _titleError;
+    }
+
+    if (value.length > 50) {
+      _titleError = 'Title cannot exceed 50 characters';
+      notifyListeners();
+      return _titleError;
+    }
+
+    // Clear error if valid
+    _titleError = null;
+    notifyListeners();
+    return null;
+  }
+
+  String? validateDate(DateTime? date) {
+    if (date == null) {
+      _dateError = 'Planned date is required';
+      notifyListeners();
+      return _dateError;
+    }
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(date.year, date.month, date.day);
+
+    if (selectedDate.isBefore(today)) {
+      _dateError = 'Planned date cannot be in the past';
+      notifyListeners();
+      return _dateError;
+    }
+
+    // Check if date is too far in the future (optional)
+    final maxDate = today.add(const Duration(days: 365 * 5)); // 5 years max
+    if (selectedDate.isAfter(maxDate)) {
+      _dateError = 'Planned date cannot be more than 5 years in the future';
+      notifyListeners();
+      return _dateError;
+    }
+
+    // Clear error if valid
+    _dateError = null;
+    notifyListeners();
+    return null;
+  }
+
+  String? validateDescription(String? value) {
+    if (value == null || value.isEmpty) {
+      // Description is optional, so no error
+      _descriptionError = null;
+      notifyListeners();
+      return null;
+    }
+
+    if (value.length > 500) {
+      _descriptionError = 'Description cannot exceed 500 characters';
+      notifyListeners();
+      return _descriptionError;
+    }
+
+    // Clear error if valid
+    _descriptionError = null;
+    notifyListeners();
+    return null;
+  }
+
+  //================= FORM VALIDATION ==================
+
+  bool get isFormValid {
+    return validateTitle(titleController.text) == null &&
+        validateDate(selectedPlannedDate) == null &&
+        validateDescription(descriptionController.text) == null;
+  }
+
+  void validateAllFields() {
+    validateTitle(titleController.text);
+    validateDate(selectedPlannedDate);
+    validateDescription(descriptionController.text);
+  }
+
+  void clearValidationErrors() {
+    _titleError = null;
+    _dateError = null;
+    _descriptionError = null;
+    notifyListeners();
+  }
+
   //================= Load Projects ==================
-  // In ProjectViewModel - Update loadProjects method
   Future<void> loadProjects() async {
     if (!hasLoaded) {
       _isLoading = true;
@@ -27,16 +135,6 @@ class ProjectViewModel extends ChangeNotifier {
 
     try {
       _projects = await TodoDatabase.getProjects();
-
-      // for (final project in _projects) {
-      //   if (project.id != null) {
-      //     await TodoDatabase.recalculateProjectStats(project.id!);
-      //   }
-      // }
-
-      // Reload projects with updated stats
-      _projects = await TodoDatabase.getProjects();
-
       hasLoaded = true;
       _isLoading = false;
       notifyListeners();
@@ -49,12 +147,14 @@ class ProjectViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> createProject() async {
-    if (titleController.text.isEmpty || selectedPlannedDate == null) {
-      debugPrint(
-        "❌ Project creation failed: Title or Planned Date is missing.",
-      );
-      return;
+  //================= Create Project ==================
+  Future<bool> createProject() async {
+    // Validate all fields before creating
+    validateAllFields();
+
+    if (!isFormValid) {
+      debugPrint("❌ Project creation failed: Form validation errors");
+      return false;
     }
 
     _isLoading = true;
@@ -62,33 +162,34 @@ class ProjectViewModel extends ChangeNotifier {
 
     try {
       final newProject = Project(
-        title: titleController.text,
-        description: descriptionController.text.isEmpty
+        title: titleController.text.trim(),
+        description: descriptionController.text.trim().isEmpty
             ? null
-            : descriptionController.text,
+            : descriptionController.text.trim(),
         plannedDate: selectedPlannedDate!,
         totalTasks: 0,
         completedTasks: 0,
       );
 
       final newId = await TodoDatabase.insertProject(newProject);
-
       final projectWithId = newProject.copyWith(id: newId);
       _projects.add(projectWithId);
 
       clearControllers();
+      clearValidationErrors();
 
-      // Data is ready, it will be set to false in the finally block
+      debugPrint("✅ Project created successfully");
+      return true;
     } catch (e) {
       debugPrint("❌ Error creating project: $e");
+      return false;
     } finally {
-      // 2. Set loading state to false and notify listeners
       _isLoading = false;
       notifyListeners();
     }
   }
 
-  // In ProjectViewModel - FIX the deleteProject method
+  //================= Delete Project ==================
   Future<void> deleteProject(Project project) async {
     if (project.id != null) {
       _isLoading = true;
@@ -97,14 +198,9 @@ class ProjectViewModel extends ChangeNotifier {
       final id = project.id!;
 
       try {
-        // CORRECT: Delete only this project, not the entire database
         await TodoDatabase.deleteProject(id);
-
-        // Remove from local state
         _projects.removeWhere((p) => p.id == id);
-
         debugPrint('🗑️ Project deleted: $id');
-        debugPrint('Remaining Projects: ${_projects.length}');
       } catch (e) {
         debugPrint("❌ Error deleting project: $e");
       } finally {
@@ -116,12 +212,32 @@ class ProjectViewModel extends ChangeNotifier {
     }
   }
 
-  // ===================== Set Planned Date =====================
+  //================= Set Planned Date ==================
   void setPlannedDate(DateTime date) {
     selectedPlannedDate = date;
     plannedDateController.text =
         "${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}";
+    // Auto-validate date when set
+    validateDate(date);
     notifyListeners();
+  }
+
+  //================= Auto-validation on text changes ==================
+  void initializeValidationListeners() {
+    titleController.addListener(() {
+      validateTitle(titleController.text);
+    });
+
+    descriptionController.addListener(() {
+      validateDescription(descriptionController.text);
+    });
+  }
+
+  //================= Cleanup ==================
+  void disposeControllers() {
+    titleController.dispose();
+    descriptionController.dispose();
+    plannedDateController.dispose();
   }
 
   Future<void> deleteDataBase() async {
@@ -144,5 +260,6 @@ class ProjectViewModel extends ChangeNotifier {
     descriptionController.clear();
     plannedDateController.clear();
     selectedPlannedDate = null;
+    clearValidationErrors();
   }
 }

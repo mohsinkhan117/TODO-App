@@ -1,4 +1,6 @@
 // lib\ui\todo_project\todo_project.dart
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:percent_indicator/flutter_percent_indicator.dart';
@@ -21,66 +23,95 @@ class TodoProject extends StatelessWidget {
       (_) => vmNoListen.loadProjects(),
     );
 
-    return RefreshIndicator(
-      onRefresh: () => vm.loadProjects(),
-      child: Scaffold(
-        appBar: AppBar(
-          actions: [
-            IconButton(
-              onPressed: () {
-                vm.deleteDataBase();
-              },
-              icon: const Icon(Icons.delete),
-            ),
-          ],
-          title: Text(
-            '  P R O J E C T S',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-        ),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (vm.isLoading)
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: CupertinoActivityIndicator(radius: 15.0),
-                ),
-              )
-            else if (vm.projects.isEmpty)
-              const Center(child: Text('No Projects Created, Create One'))
-            else
-              Expanded(
-                child: ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemBuilder: (context, index) {
-                    final project = vm.projects[index];
-
-                    return ToDoProjectContainer(
-                      index: index,
-                      project: project,
-
-                      onDelete: () => vm.deleteProject(project),
-                    );
-                  },
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(height: 10),
-                  itemCount: vm.projects.length,
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: () => vm.loadProjects(),
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              title: Text(
+                'P R O J E C T S',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
                 ),
               ),
+              pinned: true,
+              expandedHeight: 180,
+              backgroundColor: Colors.transparent,
+              shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(25),
+                  bottomRight: Radius.circular(25),
+                ),
+              ),
+              flexibleSpace: Container(
+                decoration: BoxDecoration(
+                  gradient: AppGradients.gradients.values.elementAt(7),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(25),
+                    bottomRight: Radius.circular(25),
+                  ),
+                ),
+                child: const Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: 16.0),
+                    // child:
+                  ),
+                ),
+              ),
+              actions: [
+                IconButton(
+                  onPressed: () => vm.deleteDataBase(),
+                  icon: const Icon(Icons.delete, color: Colors.white),
+                ),
+              ],
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.all(12.0),
+                child: vm.isLoading
+                    ? const Center(
+                        child: CupertinoActivityIndicator(radius: 15),
+                      )
+                    : vm.projects.isEmpty
+                    ? const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text('No Projects Created, Create One'),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemBuilder: (context, index) {
+                          final project = vm.projects[index];
+                          return ToDoProjectContainer(
+                            index: index,
+                            project: project,
+                            onDelete: () => vm.deleteProject(project),
+                          );
+                        },
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemCount: vm.projects.length,
+                      ),
+              ),
+            ),
           ],
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          label: const Text('CREATE PROJECT'),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => CreateTodoProject()),
-            );
-          },
-        ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        label: const Text('CREATE PROJECT'),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CreateTodoProject()),
+          );
+        },
       ),
     );
   }
@@ -113,123 +144,156 @@ class ToDoProjectContainer extends StatelessWidget {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-            //
             builder: (context) => ToDos(project: project, index: index),
           ),
         ),
         child: Container(
           decoration: BoxDecoration(
-            gradient: AppGradients.gradients.values.elementAt(
-              index % AppGradients.gradients.length,
-            ),
+            // gradient: AppGradients.gradients.values.elementAt(
+            //   index % AppGradients.gradients.length,
+            // ),
             borderRadius: BorderRadius.circular(30.0),
+            color: Colors.white.withValues(alpha: 0.3),
+            border: Border.all(color: Colors.white30),
           ),
+
           height: MediaQuery.of(context).devicePixelRatio * 70.0,
           width: MediaQuery.of(context).devicePixelRatio * 110.0,
-          child: Stack(
-            children: [
-              Positioned(
-                top: 20,
-                left: 20,
-                right: 50,
-                child: Text(
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-
-                  project.title.toUpperCase(),
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30.0),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 2.0, sigmaY: 2.0),
+              child: Padding(
+                padding: const EdgeInsets.only(
+                  top: 15.0,
+                  right: 15.0,
+                  left: 15.0,
+                  bottom: 10.0,
                 ),
-              ),
-              Positioned(
-                top: 80,
-                left: 20,
-                right: 20,
-                child: Text(
-                  maxLines: 4,
-                  // CHANGED: Access model property
-                  project.description ?? 'undescribed',
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-              //============ Delete functionality===========
-              Positioned(
-                top: 10,
-                right: 10,
-                child: Consumer<ProjectViewModel>(
-                  builder: (context, vm, child) {
-                    return CircleAvatar(
-                      backgroundColor: Colors.white30,
-                      radius: 20,
-                      child: vm.isLoading
-                          ? const CupertinoActivityIndicator(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            project.title.toUpperCase(),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18.0,
+                              fontWeight: FontWeight.bold,
                               color: Colors.white,
-                            )
-                          : IconButton(
-                              onPressed: () async {
-                                dialogueBox(
-                                  context: context,
-                                  onDelete: () => vm.deleteProject(project),
-                                  content:
-                                      'You are deleting "${project.title.toUpperCase()}"\n You will be unable to restore it',
-                                );
-                              },
-                              icon: const Icon(
-                                Icons.delete_outline_rounded,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 11.0),
+                        Consumer<ProjectViewModel>(
+                          builder: (context, vm, child) {
+                            return Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white30,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              child: vm.isLoading
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(5.0),
+                                      child: CupertinoActivityIndicator(
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : IconButton(
+                                      onPressed: () async {
+                                        dialogueBox(
+                                          context: context,
+                                          onDelete: () =>
+                                              vm.deleteProject(project),
+                                          content:
+                                              'You are deleting "${project.title.toUpperCase()}"\n You will be unable to restore it',
+                                        );
+                                      },
+                                      icon: const Icon(
+                                        Icons.delete_outline_rounded,
+                                        color: Colors.white,
+                                        size: 18.0,
+                                      ),
+                                    ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    Divider(color: Colors.white30, thickness: 1.5),
+                    // Description
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 8.0, bottom: 5.0),
+                        child: Text(
+                          project.description ?? 'No description',
+                          maxLines: 3,
+                          overflow: TextOverflow.fade,
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 14,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // SizedBox(height: 5),
+                    // Progress Section
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Task Count
+                        Row(
+                          children: [
+                            Text(
+                              '${project.completedTasks}/${project.totalTasks} tasks completed',
+                              style: const TextStyle(
+                                fontSize: 16,
                                 color: Colors.white,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                    );
-                  },
-                ),
-              ),
-              //============= Task completed ===============
-              Positioned(
-                bottom: 37,
-                left: 20,
-                child: Text(
-                  // CHANGED: Access model properties
-                  ' ${project.completedTasks}/${project.totalTasks}',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              //============= percent indicator ============
-              Positioned(
-                bottom: 20,
-                left: 10,
-                right: 20,
-                child: LinearPercentIndicator(
-                  barRadius: const Radius.circular(10),
-                  linearStrokeCap: LinearStrokeCap.roundAll,
-                  animation: true,
-                  animationDuration: 800,
-                  progressColor: Colors.white,
+                          ],
+                        ),
 
-                  percent: progress,
-                  backgroundColor: Colors.blue[100],
-                  width: MediaQuery.of(context).devicePixelRatio * 50.0,
-                  lineHeight: 15.0,
+                        const SizedBox(height: 8),
+
+                        // Progress Bar
+                        LinearPercentIndicator(
+                          barRadius: const Radius.circular(10),
+                          linearStrokeCap: LinearStrokeCap.roundAll,
+                          animation: true,
+                          animationDuration: 800,
+                          progressColor: Colors.white,
+                          percent: progress,
+                          backgroundColor: Colors.white.withOpacity(0.3),
+                          lineHeight: 12.0,
+                          padding: EdgeInsets.zero,
+                        ),
+
+                        const SizedBox(height: 8),
+
+                        // Planned Date
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: Text(
+                            'Planned for: $plannedDateStr',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-              //================ planned for ============
-              Positioned(
-                bottom: 10,
-                right: 15,
-                child: Text(
-                  // CHANGED: Use formatted date string
-                  'Planned for: $plannedDateStr',
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
