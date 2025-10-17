@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:todo_app/ui/project_view/project_view.dart';
+import 'package:todo_app/ui/app_shell.dart';
+import 'package:todo_app/ui/app_shell_view_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:todo_app/ui/project_view/project_view_model.dart';
-import 'package:todo_app/ui/tasks_view/task_view.dart';
 import 'package:todo_app/ui/tasks_view/task_view_model.dart';
 import 'firebase_options.dart';
 
@@ -15,6 +15,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => ProjectViewModel()),
         ChangeNotifierProvider(create: (_) => TaskViewModel()),
+        ChangeNotifierProvider(create: (_) => AppShellViewModel()),
       ],
       child: MyApp(),
     ),
@@ -35,7 +36,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
       ),
-      home: TodoProject(),
+      home: AppShell(),
     );
   }
 }

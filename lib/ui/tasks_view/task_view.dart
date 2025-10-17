@@ -239,8 +239,10 @@ class _ToDoContainerState extends State<ToDoContainer> {
           decoration: BoxDecoration(
             color: containerColor,
             borderRadius: BorderRadius.circular(25.0),
+            border: Border.all(width: 1.5, color: Colors.grey),
           ),
-          child: Stack(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),

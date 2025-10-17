@@ -26,7 +26,7 @@ class TodoProject extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'P R O J E C T S',
+          'T A S K L E',
           style: TextStyle(
             color: Colors.white,
             fontSize: 22,
@@ -291,7 +291,7 @@ class ToDoProjectContainer extends StatelessWidget {
                         padding: const EdgeInsets.only(top: 8.0, bottom: 5.0),
                         child: Text(
                           project.description ?? 'No description',
-                          maxLines: 3,
+                          maxLines: 4,
                           overflow: TextOverflow.fade,
                           style: const TextStyle(
                             // color: Colors.white70,
@@ -301,7 +301,7 @@ class ToDoProjectContainer extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(height: 5),
+                    // SizedBox(height: 3.0),
                     // Progress Section
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
