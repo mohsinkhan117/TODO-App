@@ -24,55 +24,24 @@ class TodoProject extends StatelessWidget {
     );
 
     return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'P R O J E C T S',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            letterSpacing: 2,
+          ),
+        ),
+      ),
       body: RefreshIndicator(
         onRefresh: () => vm.loadProjects(),
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              title: Text(
-                'P R O J E C T S',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
-              ),
-              pinned: true,
-              expandedHeight: 180,
-              backgroundColor: Colors.transparent,
-              shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(25),
-                  bottomRight: Radius.circular(25),
-                ),
-              ),
-              flexibleSpace: Container(
-                decoration: BoxDecoration(
-                  gradient: AppGradients.gradients.values.elementAt(7),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(25),
-                    bottomRight: Radius.circular(25),
-                  ),
-                ),
-                child: const Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Padding(
-                    padding: EdgeInsets.only(bottom: 16.0),
-                    // child:
-                  ),
-                ),
-              ),
-              actions: [
-                IconButton(
-                  onPressed: () => vm.deleteDataBase(),
-                  icon: const Icon(Icons.delete, color: Colors.white),
-                ),
-              ],
-            ),
-
-            SliverToBoxAdapter(
-              child: Padding(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Stats(),
+              Padding(
                 padding: const EdgeInsets.all(12.0),
                 child: vm.isLoading
                     ? const Center(
@@ -85,23 +54,33 @@ class TodoProject extends StatelessWidget {
                           child: Text('No Projects Created, Create One'),
                         ),
                       )
-                    : ListView.separated(
-                        physics: const NeverScrollableScrollPhysics(),
-                        shrinkWrap: true,
-                        itemBuilder: (context, index) {
-                          final project = vm.projects[index];
-                          return ToDoProjectContainer(
-                            index: index,
-                            project: project,
-                            onDelete: () => vm.deleteProject(project),
-                          );
-                        },
-                        separatorBuilder: (_, __) => const SizedBox(height: 10),
-                        itemCount: vm.projects.length,
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'PROJECTS\n',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          ListView.separated(
+                            physics: const NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemBuilder: (context, index) {
+                              final project = vm.projects[index];
+                              return ToDoProjectContainer(
+                                index: index,
+                                project: project,
+                                onDelete: () => vm.deleteProject(project),
+                              );
+                            },
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 10),
+                            itemCount: vm.projects.length,
+                          ),
+                        ],
                       ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -112,6 +91,87 @@ class TodoProject extends StatelessWidget {
             MaterialPageRoute(builder: (_) => const CreateTodoProject()),
           );
         },
+      ),
+    );
+  }
+}
+
+class Stats extends StatelessWidget {
+  const Stats({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 18.0),
+      child: Column(
+        // mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('STATS', style: Theme.of(context).textTheme.titleLarge),
+          SizedBox(height: 5.0),
+          Container(
+            height: MediaQuery.of(context).devicePixelRatio * 50,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              gradient: AppGradients.gradients.values.elementAt(7),
+              borderRadius: const BorderRadius.all(Radius.circular(30.0)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                CircularPercentIndicator(
+                  footer: FittedBox(
+                    child: Text(
+                      'Done TODOs',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  center: Text('70%'),
+                  radius: 35.0,
+                  progressColor: Colors.blue,
+                  animation: true,
+                  animationDuration: 800,
+                  lineWidth: 10,
+                  circularStrokeCap: CircularStrokeCap.round,
+                  progressBorderColor: Colors.black,
+                  percent: 0.7,
+                ),
+                CircularPercentIndicator(
+                  footer: FittedBox(
+                    child: Text(
+                      'Remaining',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  center: FittedBox(child: Text('30%')),
+                  radius: 35.0,
+                  animation: true,
+                  animationDuration: 800,
+                  lineWidth: 10,
+                  circularStrokeCap: CircularStrokeCap.round,
+                  progressColor: Colors.green,
+                  progressBorderColor: Colors.black,
+                  percent: 0.3,
+                ),
+                CircularPercentIndicator(
+                  footer: Text(
+                    'Over Due',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  center: Text('35%'),
+                  radius: 35.0,
+                  progressColor: Colors.yellow,
+                  animation: true,
+                  animationDuration: 800,
+                  lineWidth: 10,
+                  circularStrokeCap: CircularStrokeCap.round,
+                  progressBorderColor: Colors.black,
+                  percent: 0.35,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -153,8 +213,8 @@ class ToDoProjectContainer extends StatelessWidget {
             //   index % AppGradients.gradients.length,
             // ),
             borderRadius: BorderRadius.circular(30.0),
-            color: Colors.white.withValues(alpha: 0.3),
-            border: Border.all(color: Colors.white30),
+            color: Colors.grey.withValues(alpha: 0.3),
+            border: Border.all(color: Colors.grey.withValues(alpha: 0.3)),
           ),
 
           height: MediaQuery.of(context).devicePixelRatio * 70.0,
@@ -184,7 +244,7 @@ class ToDoProjectContainer extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 18.0,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white,
+                              // color: Colors.white,
                             ),
                           ),
                         ),
@@ -193,14 +253,14 @@ class ToDoProjectContainer extends StatelessWidget {
                           builder: (context, vm, child) {
                             return Container(
                               decoration: BoxDecoration(
-                                color: Colors.white30,
+                                color: Colors.grey.withValues(alpha: 0.3),
                                 borderRadius: BorderRadius.circular(30),
                               ),
                               child: vm.isLoading
                                   ? const Padding(
                                       padding: EdgeInsets.all(5.0),
                                       child: CupertinoActivityIndicator(
-                                        color: Colors.white,
+                                        // color: Colors.white,
                                       ),
                                     )
                                   : IconButton(
@@ -215,7 +275,7 @@ class ToDoProjectContainer extends StatelessWidget {
                                       },
                                       icon: const Icon(
                                         Icons.delete_outline_rounded,
-                                        color: Colors.white,
+                                        // color: Colors.white,
                                         size: 18.0,
                                       ),
                                     ),
@@ -224,7 +284,7 @@ class ToDoProjectContainer extends StatelessWidget {
                         ),
                       ],
                     ),
-                    Divider(color: Colors.white30, thickness: 1.5),
+                    Divider(color: Colors.grey, thickness: 1.5),
                     // Description
                     Expanded(
                       child: Padding(
@@ -234,56 +294,51 @@ class ToDoProjectContainer extends StatelessWidget {
                           maxLines: 3,
                           overflow: TextOverflow.fade,
                           style: const TextStyle(
-                            color: Colors.white70,
+                            // color: Colors.white70,
                             fontSize: 14,
                             height: 1.4,
                           ),
                         ),
                       ),
                     ),
-                    // SizedBox(height: 5),
+                    SizedBox(height: 5),
                     // Progress Section
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        // Task Count
-                        Row(
-                          children: [
-                            Text(
-                              '${project.completedTasks}/${project.totalTasks} tasks completed',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                        Text(
+                          '${project.completedTasks}/${project.totalTasks} ',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-
-                        const SizedBox(height: 8),
+                        // const SizedBox(width: 8),
 
                         // Progress Bar
-                        LinearPercentIndicator(
-                          barRadius: const Radius.circular(10),
-                          linearStrokeCap: LinearStrokeCap.roundAll,
-                          animation: true,
-                          animationDuration: 800,
-                          progressColor: Colors.white,
-                          percent: progress,
-                          backgroundColor: Colors.white.withOpacity(0.3),
-                          lineHeight: 12.0,
-                          padding: EdgeInsets.zero,
+                        Expanded(
+                          child: LinearPercentIndicator(
+                            barRadius: const Radius.circular(10),
+                            linearStrokeCap: LinearStrokeCap.roundAll,
+                            animation: true,
+                            animationDuration: 800,
+                            progressColor: Colors.green,
+                            percent: progress,
+                            backgroundColor: Colors.grey.withOpacity(0.3),
+                            lineHeight: 12.0,
+                            // padding: EdgeInsets.zero,
+                          ),
                         ),
 
-                        const SizedBox(height: 8),
+                        // const SizedBox(width: 8),
 
                         // Planned Date
-                        Align(
-                          alignment: Alignment.centerRight,
+                        Expanded(
                           child: Text(
-                            'Planned for: $plannedDateStr',
+                            'Planned For: $plannedDateStr',
                             style: const TextStyle(
-                              color: Colors.white70,
+                              color: Colors.green,
                               fontSize: 12,
                             ),
                           ),
